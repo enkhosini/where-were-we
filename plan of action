@@ -1,0 +1,17 @@
+1.  Figure out speech to text #
+1.2 with Speaker identification
+2. Keyword Collection, [of 50 words, or per dialog pair] 
+3. Sending keyword list to the wiki api for fuzzy search for topic matching #
+3. find a better api to send stuff to than WIKIpedia [ ]
+4. Send feedback back to user to tell them what the 10 ten searches are and give them option to pic from the top 10, optionally accept the highest matching option thats  > 90% 
+4.2 Its either i just have the system do it itself or implement the Bayessian thinking model
+5. Add the Topic to the Convesation time line #
+5.1 Calculate the nicheness of the conversation topic and decide the saturation of the bubble from the average popularity of the conversation on google trends
+6
+
+
+
+
+issues
+python development tools mismatch
+how do i get data from one pyscript to another when i have to run a script

@@ -1,0 +1,8 @@
+whisper-live
+yake
+pandas
+matplotlib 
+numpy
+pytz
+RealtimeSTT[whisper-cpp, faster-whisper]
+speech_recognition
