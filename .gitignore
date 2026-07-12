@@ -5,3 +5,5 @@ models
 realtimesst.log
 new_learning.txt
 containers
+.venv
+pyproject.toml

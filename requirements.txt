@@ -1,8 +1,9 @@
-whisper-live
-yake
-pandas
-matplotlib 
-numpy
 pytz
-RealtimeSTT[whisper-cpp, faster-whisper]
-speech_recognition
+requests
+numpy
+pandas
+yake
+matplotlib
+seaborn 
+RealtimeSTT[whisper-cpp]
+# RealtimeSTT[faster-whisper]
