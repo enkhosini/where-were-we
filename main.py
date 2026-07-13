@@ -1,136 +1,172 @@
 #using it to do the preprocessing of the text input of the chat messages
 import json
+import requests
+import keyboard
 import pytz
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import requests
 import yake
 import matplotlib.pyplot as plt
+import os
 from RealtimeSTT import AudioToTextRecorder
-# import voice_to_speech as vts
 
 tz = pytz.timezone('Africa/Johannesburg')
 
-text = ''
+# figure out a way to capture the things like text buffer and current word count without having them being caught up in the repeaping loop
+# i think the way ive decided on is to have a switch that is true the first time it run then immediately turns false after init
+# then when the word count has been reached then we reset the values and reset the bool var 
 
-def process_text(text):
-    print(text)
-
-# maybe use the one shot to monologue and then the machine can try to predict what what the user is talking about 
-def start_transcription():
-    recorder = AudioToTextRecorder(
-        transcription_engine="whisper_cpp",
-        enable_realtime_transcription=True,
-        model="tiny.en",
-        device="cpu",
-        beam_size=1,
-    )
-
-    try:
-        while True:
-            recorder.text(process_text)
-    except KeyboardInterrupt:
-        print("Recording stopped by User...")
-        exit(0)
-
-#find a better more general keyword extractor (?)
-# With custom parameters
-custom_kw_extractor = yake.KeywordExtractor(
-    lan="en",              # language
-    n=2,                   # ngram size
-    dedupLim=0.9,          # deduplication threshold
-    dedupFunc='seqm',      # deduplication function
-    windowsSize=1,         # context window
-    top=2,                # number of keywords to extract
-    features=None,         # custom features
-    stopwords=None
-)
-
-#lower score means more importantrelevent a keyword is
-keywords = custom_kw_extractor.extract_keywords(text)
-
-keyword_list = ''
-max_page_suggestions = 3
-
-for word in keywords:
-    keyword_list += (word[0]) + ','
-    # print(word[0])
+text_buffer = ''
+keyword_list = []
+word_count = 0
+desired_word_count = 50
 
 #find a better API
-url = 'https://en.wikipedia.org/w/rest.php/v1/search/page'
-headers = {
-    'User-Agent': 'MediaWiki REST API docs examples/0.1 (https://www.mediawiki.org/wiki/API_talk:REST_API)'
-}
-params = {
-    'q': keyword_list,
-    'limit': max_page_suggestions
-}
-response = requests.get(url, headers=headers, params=params)
+def api_query_task(api_url,keyword_list =["Rick Roll"], max_page_suggestions=3):
+    url = api_url
 
-
-requestlink = response.url
-
-# response.json() turns the recieved response into a python DS
-data = response.json()
-
-#dump turns python DS into a json string
-requestlink = response.url
-
-# response.json() turns the recieved response into a python DS
-data = response.json()
-
-#dump turns python DS into a json string
-results_json = json.dumps(data, indent=2)
-# results_python = json.load(data)
-
-
-print(requestlink)
-# print(results_json)
-
-results_json = json.dumps(data, indent=2)
-# results_python = json.load(data)
-#.split('.')[0] is used to remove the extra precision points in the time stamp 
-df = pd.DataFrame()
-
-def timestamp_now():
-    return pd.to_datetime(pd.Timestamp.now('Africa/Johannesburg'))
-# dataframe format 
-entry_series = {
-    'timestamp':                [timestamp_now()],
-    'Main Topic':               [data['pages'][0]['title']],
-    'Main Topic description':   [data['pages'][0]['description']],
-    'Second Topic':             [data['pages'][1]['title']],
-    'Second Topic description': [data['pages'][1]['description']]
+    headers = {
+        'User-Agent': 'MediaWiki REST API docs examples/0.1 (https://www.mediawiki.org/wiki/API_talk:REST_API)'
+    }
+    params = {
+        'q': keyword_list,
+        'limit': max_page_suggestions
     }
 
-entry_series = pd.DataFrame(entry_series)
+    # JSON string response object
+    response = requests.get(url, headers=headers, params=params)
+    # print(response.url)
 
-entry_series['Time'] = entry_series['timestamp'].dt.strftime("%H:%M:%S")
-df = pd.concat([df, entry_series], ignore_index=True)
+def process_text(text):
+    desired_word_count = 10
+    global text_buffer
+    global word_count
 
-topic_timeline = df.copy()
-topic_timeline["Level"] = [np.random.randint(-6,-2) if (i%2)==0 else np.random.randint(2,6) for i in range(len(topic_timeline))]
+    # just check if the transcription section is empty
+    if text != "":
+        with open('transcription.txt', 'a') as file:
+            file.writelines(text + "\n")
+            file.close()   
 
-fig, ax = plt.subplots(figsize=(18,9))
+        word_count += len(text.split())
+        text_buffer += ' ' + text
+        print("\n" + text + "\n")
 
-# here we are plotting a straight black line with the df['Time] values and the data points (with shape "-o" and in black) will be placed in their positions
-# [0,]* len(df) is the y values for the graph(as a list), where we are telling it to put all the markers at y=0 for the length of the straight line
-ax.plot(topic_timeline['Time'], [0,]* len(df), "-o", color="black", markerfacecolor="white")
+        # only send the query after 100 words
+        print("Word Count: " + str(word_count) + "\n")
 
-ax.set_ylim(-7,7)
+        if word_count > desired_word_count:
+            print("word count reached \n")
+            # print("Text buffer: " + text_buffer + "\n")
+            custom_kw_extractor = yake.KeywordExtractor(
+                lan="en",              # language
+                n=2,                   # ngram size
+                dedupLim=0.9,          # deduplication threshold
+                dedupFunc='seqm',      # deduplication function
+                windowsSize=1,         # context window
+                top=2,                 # number of keywords to extract
+                features=None,         # custom features
+                stopwords=None
+            )
+            keywords = custom_kw_extractor.extract_keywords(text_buffer)
 
-for idx in range(len(topic_timeline)):
-    time, topic, level = topic_timeline["Time"][idx], topic_timeline["Main Topic"][idx], topic_timeline["Level"][idx]
-    ax.annotate(topic, xy=(time, 0.1 if level>0 else -0.1),xytext=(time, level),
-                arrowprops=dict(arrowstyle="-",color="red", linewidth=0.8),ha="center"
-               );
+            text_buffer = ''
+            word_count = 0
+            global keyword_list
 
-ax.spines[["left", "top", "right", "bottom"]].set_visible(False)
-ax.spines[["bottom"]].set_position(("axes", 0.5))
-ax.yaxis.set_visible(False)
-ax.set_title("Current conversation timeline", pad=10, loc="center", fontsize=25, fontweight="bold")
-plt.show()
+            for kw_score_pair in keywords:
+                keyword_list.append(kw_score_pair[0])
+
+            api_query_task('https://en.wikipedia.org/w/rest.php/v1/search/page', keyword_list, max_page_suggestions)
+
+
+            # output_processed_text(keyword_list)
+            return keyword_list, word_count
+        else:
+            print(f"api call will happen when word count is more than the desired word count: {desired_word_count}")
+    else:
+        print("Nothing transcribed\n")
+        
+# function to send out the keyword list to the api without having to terminate the whole function with the return keyword
+# update: didnot work found a work around luckily. Focus on the concept not the technicalities
+# def output_processed_text(p_recorder, p_process_funct):
+#     return p_recorder.text(p_process_funct)
+
+
+
+# maybe use the one shot to monologue and then the machine can try to predict what what the user is talking about 
+def transcription():
+
+    recorder = AudioToTextRecorder(
+        transcription_engine="whisper_cpp",
+        model="tiny.en",                    # final transcription
+        language="en",                      # force this — skips language auto-detection        enable_realtime_transcription=True,
+        realtime_model_type="tiny.en",      # keep same if already smallest, or try "tiny"
+        realtime_processing_pause=0.4,      # increase this — fewer realtime passes = less CPU load
+        device="cpu",
+        beam_size=1,
+        spinner=False,
+        silero_sensitivity=0.5,
+        webrtc_sensitivity=2,
+        post_speech_silence_duration=0.6
+        )
+    
+    # read the docs to figure out why this ⠋ speak now still lingers even after i recorder.abort() it or even Ctl+C it
+    # so apparently this thing has a rouge thread runnning around even after i kill the  process
+    #turns out its actually a thread hat doesnt .join() at the end of its work
+    #fucking hell i turns out that i just didnt know that there was a recorder.shutdown() function, i kept trying .abort() and .stop()
+    # no disrespect on the RTSTT dev but then im so confused on the functions Oh my Days!
+    # but anyways "Google! Play me The Man by Aloe Blacc " 
+    # edit: its tweaking out again when i put it back into the while loop
+    # so i tried to throw everything i had at it and it just laughed in my face because when i removed .abort() and .stop() happening again then it kinda worked better at stopping the voice to txt
+    # so its now working well, but its just the visuals that are fucked up
+    # edit: i succumed to the jure of AI to fix the problem, father dont shun me. and whats worse is that it worked
+    # lesson: dont get so hardstuck into the way that you wanna do it, open up your mind into other kinds of ways to do it, to might find that it helps your use case even better
+
+    while True:
+        try:
+            text = recorder.text()          # blocks until transcription is ready
+            print("Transcribed:", text, "\n")
+            keyword_list = process_text(text)   # use it right here
+
+        except KeyboardInterrupt:
+            recorder.shutdown()
+            recorder.stop()
+            # recorder.abort()
+            print("\nRecording stopped by User...\n")
+            return
+
 
 if __name__ == "__main__":
-    capture_audio()
+    while True:
+        u_input = ''
+        print('-'*100)
+        print("\n                                           where were we?...\n")
+        print('-'*100)
+        # print('Start of loop')
+
+        # add a global settings menu perhaps??? for things like api link and desired word count
+        u_input = input("Please Enter: \n    T to start tracking conversation \n    Q to quit the program entirely\n\n->  ").lower()
+        
+        if u_input == "t":
+            # print('You Pressed T Key!')
+            # starting the conversation recorder
+            file = open('transcription.txt', 'a')
+            file.writelines("\nStarting transcryption:...\n")
+            file.close()
+            # data flow must happen here mainly
+        
+            max_page_suggestions = 3
+            transcription()
+            
+            print("right after transcription halt")
+
+            pass
+        elif u_input == 'q': 
+            print('Thank you for trying to remember, im sure youll be back soon kkkkk...')
+            # exiting the program
+            exit(0) 
+        else:
+            print("\n...unrecognized key...\ntry again!!!")  # if user pressed a key other than the given key the loop will break
+

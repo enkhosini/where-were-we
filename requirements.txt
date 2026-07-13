@@ -1,5 +1,6 @@
 pytz
 requests
+keyboard
 numpy
 pandas
 yake
