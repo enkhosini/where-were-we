@@ -95,9 +95,9 @@ def api_query_task(api_url,keyword_list =["Rick Roll"], max_page_suggestions=3):
         'limit': max_page_suggestions
     }
 
+    #why is DNS popping up as such a random error on myside, and then the thing just cra 
     # JSON string response object
     response = requests.get(url, headers=headers, params=params)
-
     response = response.json()
 
 
