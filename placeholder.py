@@ -29,9 +29,6 @@ data = response.json()
 #dump turns python DS into a json string
 requestlink = response.url
 
-# response.json() turns the recieved response into a python DS
-data = response.json()
-
 #dump turns python DS into a json string
 results_json = json.dumps(data, indent=2)
 # results_python = json.load(data)
@@ -39,30 +36,6 @@ results_json = json.dumps(data, indent=2)
 
 print(requestlink)
 # print(results_json)
-
-results_json = json.dumps(data, indent=2)
-def initializr_the_dataframes():
-    # make sure this runs once
-    df = pd.DataFrame()
-    topic_timeline = df.copy()
-
-def timestamp_now():
-    return pd.to_datetime(pd.Timestamp.now('Africa/Johannesburg'))
-
-def add_entry_to_df():
-    entry_series = {
-        'timestamp':                [timestamp_now()],
-        'Main Topic':               [data['pages'][0]['title']],
-        'Main Topic description':   [data['pages'][0]['description']],
-        'Second Topic':             [data['pages'][1]['title']],
-        'Second Topic description': [data['pages'][1]['description']]
-        }
-
-    entry_series = pd.DataFrame(entry_series)
-
-    entry_series['Time'] = entry_series['timestamp'].dt.strftime("%H:%M:%S")
-    df = pd.concat([df, entry_series], ignore_index=True)
-
 def add_levels_to_new_entry():
     topic_timeline["Level"] = [np.random.randint(-6,-2) if (i%2)==0 else np.random.randint(2,6) for i in range(len(topic_timeline))]
 

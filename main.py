@@ -22,6 +22,68 @@ keyword_list = []
 word_count = 0
 desired_word_count = 50
 
+def initialize_the_dataframes():
+    # make sure this runs once
+    df = pd.DataFrame()
+    topic_timeline = df.copy()
+
+def timestamp_now():
+    return pd.to_datetime(pd.Timestamp.now('Africa/Johannesburg'))
+
+def add_entry_to_df(data):
+    entry_series = {
+        'timestamp':                [timestamp_now()],
+        'Main Topic':               [data['pages'][0]['title']],
+        'Main Topic description':   [data['pages'][0]['description']],
+        'Second Topic':             [data['pages'][1]['title']],
+        'Second Topic description': [data['pages'][1]['description']]
+        }
+
+    entry_series = pd.DataFrame(entry_series)
+
+    entry_series['Time'] = entry_series['timestamp'].dt.strftime("%H:%M:%S")
+    df = pd.concat([df, entry_series], ignore_index=True)
+
+def format_response(data, p_length):
+
+    entry_series = {
+    'timestamp':                [timestamp_now()],
+    'Main Topic':               [data['pages'][0]['title']],
+    'Main Topic description':   [data['pages'][0]['description']],
+    'Second Topic':             [data['pages'][1]['title']],
+    'Second Topic description': [data['pages'][1]['description']]
+    }
+
+    entry_series = pd.DataFrame(entry_series)
+    entry_series["Level"] = [np.random.randint(-6,-2) if (i%2)==0 else np.random.randint(2,6) for i in range(p_length)]
+
+
+    entry_series['Time'] = entry_series['timestamp'].dt.strftime("%H:%M:%S")
+    return entry_series
+
+def visualise(p_new_entry, p_timeline_df):
+
+
+
+    fig, ax = plt.subplots(figsize=(18,9))
+
+    ax.plot(p_timeline_df['Time'], [0,]* len(p_timeline_df), "-o", color="black", markerfacecolor="white")
+
+    ax.set_ylim(-7,7)
+
+    for idx in range(len(p_timeline_df)):
+        time, topic, level = p_timeline_df["Time"][idx], p_timeline_df["Main Topic"][idx], p_timeline_df["Level"][idx]
+        ax.annotate(topic, xy=(time, 0.1 if level>0 else -0.1),xytext=(time, level),
+                    arrowprops=dict(arrowstyle="-",color="red", linewidth=0.8),ha="center"
+                );
+
+    ax.spines[["left", "top", "right", "bottom"]].set_visible(False)
+    ax.spines[["bottom"]].set_position(("axes", 0.5))
+    ax.yaxis.set_visible(False)
+    ax.set_title("Current conversation timeline", pad=10, loc="center", fontsize=25, fontweight="bold")
+    plt.show()    
+    return
+
 #find a better API
 def api_query_task(api_url,keyword_list =["Rick Roll"], max_page_suggestions=3):
     url = api_url
@@ -36,6 +98,12 @@ def api_query_task(api_url,keyword_list =["Rick Roll"], max_page_suggestions=3):
 
     # JSON string response object
     response = requests.get(url, headers=headers, params=params)
+
+    data = response.json()
+
+
+
+    return response
     # print(response.url)
 
 def process_text(text):
@@ -124,11 +192,28 @@ def transcription():
     # edit: i succumed to the jure of AI to fix the problem, father dont shun me. and whats worse is that it worked
     # lesson: dont get so hardstuck into the way that you wanna do it, open up your mind into other kinds of ways to do it, to might find that it helps your use case even better
 
+    firstTime = False
+    # make sure this runs once
+    if firstTime == True:
+        df = pd.DataFrame()
+        topic_timeline = df.copy()
+
     while True:
         try:
-            text = recorder.text()          # blocks until transcription is ready
+            text = recorder.text()              # blocks until transcription is ready
             print("Transcribed:", text, "\n")
+
             keyword_list = process_text(text)   # use it right here
+            response = api_query_task('https://en.wikipedia.org/w/rest.php/v1/search/page', keyword_list, max_page_suggestions)
+            response_formatted = format_response(response, len(df))
+
+            df = pd.concat([df, response_formatted], ignore_index=True)
+            topic_timeline = df
+
+            visualise(topic_timeline)
+
+            if firstTime==False:
+                firstTime=True
 
         except KeyboardInterrupt:
             recorder.shutdown()
