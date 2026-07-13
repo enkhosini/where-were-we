@@ -30,19 +30,15 @@ def initialize_the_dataframes():
 def timestamp_now():
     return pd.to_datetime(pd.Timestamp.now('Africa/Johannesburg'))
 
-def add_entry_to_df(data):
-    entry_series = {
-        'timestamp':                [timestamp_now()],
-        'Main Topic':               [data['pages'][0]['title']],
-        'Main Topic description':   [data['pages'][0]['description']],
-        'Second Topic':             [data['pages'][1]['title']],
-        'Second Topic description': [data['pages'][1]['description']]
-        }
-
-    entry_series = pd.DataFrame(entry_series)
-
-    entry_series['Time'] = entry_series['timestamp'].dt.strftime("%H:%M:%S")
-    df = pd.concat([df, entry_series], ignore_index=True)
+# AI did thi for me so i gotta read back and make a personal implementation fr
+def random_level(i):
+    """
+    Random level whose range bound is driven by i.
+    Even i -> negative value between -i and -2
+    Odd  i -> positive value between 2 and i
+    """
+    limit = max(i, 3)  # keeps randint's low < high valid even when i is small (e.g. 0, 1, 2)
+    return np.random.randint(-limit, -2) if i % 2 == 0 else np.random.randint(2, limit)
 
 def format_response(data, p_length):
 
@@ -51,19 +47,18 @@ def format_response(data, p_length):
     'Main Topic':               [data['pages'][0]['title']],
     'Main Topic description':   [data['pages'][0]['description']],
     'Second Topic':             [data['pages'][1]['title']],
-    'Second Topic description': [data['pages'][1]['description']]
+    'Second Topic description': [data['pages'][1]['description']],
+    'Level':                    [random_level(5)]
     }
 
     entry_series = pd.DataFrame(entry_series)
-    entry_series["Level"] = [np.random.randint(-6,-2) if (i%2)==0 else np.random.randint(2,6) for i in range(p_length)]
+    # entry_series["Level"] = [np.random.randint(-6,-2) if (i%2)==0 else np.random.randint(2,6) for i in range(p_length)]
 
 
     entry_series['Time'] = entry_series['timestamp'].dt.strftime("%H:%M:%S")
     return entry_series
 
-def visualise(p_new_entry, p_timeline_df):
-
-
+def visualise(p_timeline_df):
 
     fig, ax = plt.subplots(figsize=(18,9))
 
@@ -81,7 +76,11 @@ def visualise(p_new_entry, p_timeline_df):
     ax.spines[["bottom"]].set_position(("axes", 0.5))
     ax.yaxis.set_visible(False)
     ax.set_title("Current conversation timeline", pad=10, loc="center", fontsize=25, fontweight="bold")
-    plt.show()    
+    # plt.show()  
+    # 
+    fig.tight_layout()
+    fig.savefig("./static/timeline.png", dpi=120)
+    plt.close(fig)   
     return
 
 #find a better API
@@ -99,7 +98,7 @@ def api_query_task(api_url,keyword_list =["Rick Roll"], max_page_suggestions=3):
     # JSON string response object
     response = requests.get(url, headers=headers, params=params)
 
-    data = response.json()
+    response = response.json()
 
 
 
@@ -174,7 +173,7 @@ def transcription():
         realtime_processing_pause=0.4,      # increase this — fewer realtime passes = less CPU load
         device="cpu",
         beam_size=1,
-        spinner=False,
+        spinner=True,
         silero_sensitivity=0.5,
         webrtc_sensitivity=2,
         post_speech_silence_duration=0.6
@@ -192,7 +191,7 @@ def transcription():
     # edit: i succumed to the jure of AI to fix the problem, father dont shun me. and whats worse is that it worked
     # lesson: dont get so hardstuck into the way that you wanna do it, open up your mind into other kinds of ways to do it, to might find that it helps your use case even better
 
-    firstTime = False
+    firstTime = True
     # make sure this runs once
     if firstTime == True:
         df = pd.DataFrame()
