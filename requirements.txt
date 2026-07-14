@@ -8,3 +8,4 @@ matplotlib
 seaborn 
 RealtimeSTT[whisper-cpp]
 # RealtimeSTT[faster-whisper]
+onnxruntime
