@@ -10,7 +10,7 @@ This project allows to user to have their speech transcribed and have the conten
 
 ## Demo / Screenshot
 
-![screenshot](path/to/screenshot.png)
+![screenshot](images/screenshot-demo.png)
 
 ## Installation
 
@@ -58,6 +58,6 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Contact
 
-Your Name – [@leiklo](https://www.instagram.com/leiklo/) – your.email@example.com
+My strawpage – [@leiklooo](https://leiklooo.straw.page/) – you'll find my everything there
 
-Project Link: [https://github.com/username/repo-name](https://github.com/username/repo-name)
+Project Link: [https://github.com/enkhosini/where-were-we](https://github.com/enkhosini/where-were-we)
