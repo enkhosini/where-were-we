@@ -8,3 +8,5 @@ containers
 .venv
 pyproject.toml
 transcription.txt
+data_handling.ipynp
+placeholder.py
