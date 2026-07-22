@@ -166,7 +166,7 @@ def process_text(text):
 
 
 # maybe use the one shot to monologue and then the machine can try to predict what what the user is talking about 
-def transcription():
+def transcription(df):
 
     recorder = AudioToTextRecorder(
         transcription_engine="whisper_cpp",
@@ -202,13 +202,10 @@ def transcription():
     # edit: i succumed to the jure of AI to fix the problem, father dont shun me. and whats worse is that it worked
     # lesson: dont get so hardstuck into the way that you wanna do it, open up your mind into other kinds of ways to do it, to might find that it helps your use case even better
 
-    # i gotta keep the mic volume down so that the recorder can sense silince
-    firstTime = True
-    # make sure this runs once
-    if firstTime == True:
-        df = pd.DataFrame()
-        # topic_timeline = df.copy()
-
+    # i gotta keep the mic volume down so that the recorder can sense silence properly
+    # a little consideration: is it better to just pass the df from the main program entry to avoid it being created over again and then having to use the
+    #   weird isFirstTime switch that opens on start and then closes on the next go around in the loop, performance? security? other?
+    
     while True:
         try:
             text = recorder.text()              # blocks until transcription is ready
@@ -255,7 +252,8 @@ if __name__ == "__main__":
             # data flow must happen here mainly
         
             max_page_suggestions = 3
-            transcription()
+            df = pd.DataFrame()
+            transcription(df)
             
             print("right after transcription halt")
 
