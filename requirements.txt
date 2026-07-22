@@ -1,0 +1,11 @@
+pytz
+requests
+keyboard
+numpy
+pandas
+yake
+matplotlib
+seaborn 
+RealtimeSTT[whisper-cpp]
+# RealtimeSTT[faster-whisper]
+onnxruntime
